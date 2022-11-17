@@ -502,163 +502,6 @@ def fit_3point_zeromom(
     resultsdir,
     plotdir,
     datadir,
-    operators,
-    operators_tex,
-    polarizations,
-    momenta,
-    delta_t_list,
-    tmin_choice,
-):
-    """Loop over the operators and momenta"""
-
-    src_snk_times = np.array([10, 13, 16])
-    rel = "nr"
-    config_num = 999
-    sink_mom = "p0_0_0"
-    for imom, mom in enumerate(momenta):
-        print(f"\n{mom}")
-        # ======================================================================
-        # Read the results of the fit to the two-point functions
-        kappa_combs = ["kp120900kp120900"]
-        datafile = datadir / Path(f"{kappa_combs[0]}_{mom}_{rel}_fitlist_2pt_2exp.pkl")
-        with open(datafile, "rb") as file_in:
-            fit_data = pickle.load(file_in)
-        # Pick out the chosen 2pt fn fits
-        best_fit, fit_params = select_2pt_fit(
-            fit_data,
-            tmin_choice[imom],
-            datadir,
-            mom,
-        )
-
-        for iop, operator in enumerate(operators):
-            print(f"\n{operator}")
-            for ipol, pol in enumerate(polarizations):
-                print(f"\n{pol}")
-                # ======================================================================
-                # Read in the ratio data
-                datafile_ratio = datadir / Path(
-                    f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
-                )
-                with open(datafile_ratio, "rb") as file_in:
-                    ratio_list_reim = pickle.load(file_in)
-                # ======================================================================
-
-                for ir, reim in enumerate(["real", "imag"]):
-                    print(reim)
-                    # ======================================================================
-                    # fit to the ratio of 3pt and 2pt functions with a two-exponential function
-                    t10_plateau_fit = fit_ratio_plateau(
-                        ratio_list_reim[ir][0], src_snk_times[0], delta_t_list[imom]
-                    )
-                    t13_plateau_fit = fit_ratio_plateau(
-                        ratio_list_reim[ir][1], src_snk_times[1], delta_t_list[imom]
-                    )
-                    t16_plateau_fit = fit_ratio_plateau(
-                        ratio_list_reim[ir][2], src_snk_times[2], delta_t_list[imom]
-                    )
-                    plateau_list = [
-                        t10_plateau_fit,
-                        t13_plateau_fit,
-                        t16_plateau_fit,
-                    ]
-                    plateau_param_list = [
-                        t10_plateau_fit["param"],
-                        t13_plateau_fit["param"],
-                        t16_plateau_fit["param"],
-                    ]
-                    redchisq_list = [
-                        t10_plateau_fit["redchisq"],
-                        t13_plateau_fit["redchisq"],
-                        t16_plateau_fit["redchisq"],
-                    ]
-
-                    fitfnc_2exp = ff.threept_ratio_zeromom
-                    (
-                        fit_param_ratio_boot,
-                        ratio_fit_boot,
-                        fit_param_ratio_avg,
-                        redchisq_ratio,
-                    ) = fit_ratio_2exp(
-                        ratio_list_reim[ir],
-                        fit_params,
-                        src_snk_times,
-                        delta_t_list[imom],
-                        fitfnc_2exp,
-                    )
-                    fit_params_ratio = [
-                        fit_param_ratio_boot,
-                        ratio_fit_boot,
-                        fit_param_ratio_avg,
-                        redchisq_ratio,
-                        # best_fit,
-                        delta_t_list,
-                    ]
-
-                    # Save the fit results to pickle files
-                    datafile_ratio_plateau = datadir / Path(
-                        f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
-                    )
-                    with open(datafile_ratio_plateau, "wb") as file_out:
-                        pickle.dump(plateau_list, file_out)
-
-                    datafile_ratio_2exp = datadir / Path(
-                        f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
-                    )
-                    with open(datafile_ratio_2exp, "wb") as file_out:
-                        pickle.dump(fit_params_ratio, file_out)
-
-                    # ======================================================================
-                    # Plot the ratios alone
-                    # plots.plot_all_ratios(
-                    #     ratio_list_reim[ir],
-                    #     src_snk_times,
-                    #     plotdir,
-                    #     title=f"{mom}/{pol}/ratio_{reim}_{operator}",
-                    # )
-                    # ======================================================================
-                    # Plot the results with plateau fits
-                    plots.plot_ratios_plateau_fit(
-                        ratio_list_reim[ir],
-                        plateau_param_list,
-                        redchisq_list,
-                        src_snk_times,
-                        delta_t_list[imom],
-                        plotdir,
-                        title=f"{mom}/{pol}/ratio_plateau_fit_{reim}_{operator}",
-                    )
-                    # ======================================================================
-                    # Plot the results of the fit to the ratio
-                    plots.plot_ratio_fit_paper(
-                        ratio_list_reim[ir],
-                        ratio_fit_boot,
-                        delta_t_list[imom],
-                        src_snk_times,
-                        redchisq_ratio,
-                        fit_param_ratio_boot,
-                        plotdir,
-                        [mom, operators_tex[iop], pol, reim],
-                        title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_paper",
-                    )
-                    plots.plot_ratio_fit_together(
-                        ratio_list_reim[ir],
-                        ratio_fit_boot,
-                        delta_t_list[imom],
-                        src_snk_times,
-                        redchisq_ratio,
-                        fit_param_ratio_boot,
-                        plotdir,
-                        [mom, operators_tex[iop], pol, reim],
-                        title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_together",
-                    )
-    return
-
-
-def fit_3point_zeromom_2(
-    latticedir,
-    resultsdir,
-    plotdir,
-    datadir,
     corr_choices,
     operators_chroma,
     operators_tex_chroma,
@@ -775,9 +618,8 @@ def save_ratios_zeromom(
     latticedir,
     resultsdir,
     datadir,
-    operators,
-    polarizations,
-    momenta,
+    corr_choices,
+    operators_chroma,
 ):
     """Loop over the operators and momenta"""
 
@@ -788,20 +630,13 @@ def save_ratios_zeromom(
     lattice_time_exent = 64
     sink_mom = "p0_0_0"
 
-    ratio_data = np.zeros(
-        (
-            len(momenta),
-            len(operators),
-            len(polarizations),
-            2,  # real / imag
-            3,  # tsink
-            nboot,
-            lattice_time_exent,
-        )
-    )
+    for ichoice, corrdata in enumerate(corr_choices):
+        mom = corrdata["momentum"]
+        operator = operators_chroma[corrdata["chroma_index"]]
+        pol = corrdata["pol"]
+        reim = corrdata["reim"]
+        ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
 
-    for imom, mom in enumerate(momenta):
-        print(f"\n{mom}")
         # ======================================================================
         # Read the two-point function data
         twoptfn_filename = latticedir / Path(
@@ -810,151 +645,47 @@ def save_ratios_zeromom(
         twoptfn = read_pickle(twoptfn_filename, nboot=500, nbin=1)
         twoptfn_real = twoptfn[:, :, 0]
 
-        for iop, operator in enumerate(operators):
-            for ipol, pol in enumerate(polarizations):
-                # Read in the 3pt function data
-                threeptfn_pickle_t10 = latticedir / Path(
-                    f"bar3ptfn_t10_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
-                )
-                threeptfn_pickle_t13 = latticedir / Path(
-                    f"bar3ptfn_t13_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
-                )
-                threeptfn_pickle_t16 = latticedir / Path(
-                    f"bar3ptfn_t16_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
-                )
-                threeptfn_t10 = read_pickle(threeptfn_pickle_t10, nboot=500, nbin=1)
-                threeptfn_t13 = read_pickle(threeptfn_pickle_t13, nboot=500, nbin=1)
-                threeptfn_t16 = read_pickle(threeptfn_pickle_t16, nboot=500, nbin=1)
+        # Read in the 3pt function data
+        threeptfn_pickle_t10 = latticedir / Path(
+            f"bar3ptfn_t10_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+        )
+        threeptfn_pickle_t13 = latticedir / Path(
+            f"bar3ptfn_t13_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+        )
+        threeptfn_pickle_t16 = latticedir / Path(
+            f"bar3ptfn_t16_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+        )
+        threeptfn_t10 = read_pickle(threeptfn_pickle_t10, nboot=500, nbin=1)
+        threeptfn_t13 = read_pickle(threeptfn_pickle_t13, nboot=500, nbin=1)
+        threeptfn_t16 = read_pickle(threeptfn_pickle_t16, nboot=500, nbin=1)
 
-                # ======================================================================
-                # Construct the simple ratio of 3pt and 2pt functions
-                ratio_t10 = np.einsum(
-                    "ijk,i->ijk", threeptfn_t10, twoptfn_real[:, 10] ** (-1)
-                )
-                ratio_t13 = np.einsum(
-                    "ijk,i->ijk", threeptfn_t13, twoptfn_real[:, 13] ** (-1)
-                )
-                ratio_t16 = np.einsum(
-                    "ijk,i->ijk", threeptfn_t16, twoptfn_real[:, 16] ** (-1)
-                )
-                ratio_list_reim = [
-                    [
-                        ratio_t10[:, :, 0],
-                        ratio_t13[:, :, 0],
-                        ratio_t16[:, :, 0],
-                    ],
-                    [
-                        ratio_t10[:, :, 1],
-                        ratio_t13[:, :, 1],
-                        ratio_t16[:, :, 1],
-                    ],
-                ]
+        # ======================================================================
+        # Construct the simple ratio of 3pt and 2pt functions
+        ratio_t10 = np.einsum("ijk,i->ijk", threeptfn_t10, twoptfn_real[:, 10] ** (-1))
+        ratio_t13 = np.einsum("ijk,i->ijk", threeptfn_t13, twoptfn_real[:, 13] ** (-1))
+        ratio_t16 = np.einsum("ijk,i->ijk", threeptfn_t16, twoptfn_real[:, 16] ** (-1))
+        ratio_list_reim = [
+            [
+                ratio_t10[:, :, 0],
+                ratio_t13[:, :, 0],
+                ratio_t16[:, :, 0],
+            ],
+            [
+                ratio_t10[:, :, 1],
+                ratio_t13[:, :, 1],
+                ratio_t16[:, :, 1],
+            ],
+        ]
 
-                datafile_ratio = datadir / Path(
-                    f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
-                )
-                with open(datafile_ratio, "wb") as file_out:
-                    pickle.dump(ratio_list_reim, file_out)
-
-                ratio_data[imom, iop, ipol] = ratio_list_reim
-
-    return ratio_data
-
-
-def plot_3point_zeromom(
-    latticedir,
-    resultsdir,
-    plotdir,
-    datadir,
-    operators,
-    operators_tex,
-    polarizations,
-    momenta,
-    delta_t_list,
-):
-    """Loop over the operators and momenta"""
-
-    src_snk_times = np.array([10, 13, 16])
-    rel = "nr"
-    config_num = 999
-    sink_mom = "p0_0_0"
-    fitfnc_2exp = ff.threept_ratio_zeromom
-
-    for imom, mom in enumerate(momenta):
-        print(f"\n{mom}")
-        for iop, operator in enumerate(operators):
-            for ipol, pol in enumerate(polarizations):
-                # Read in the ratio data
-                datafile_ratio = datadir / Path(
-                    f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
-                )
-                with open(datafile_ratio, "rb") as file_in:
-                    ratio_list_reim = pickle.load(file_in)
-
-                for ir, reim in enumerate(["real", "imag"]):
-
-                    # Read the fit results from pickle files
-                    datafile_ratio_plateau = datadir / Path(
-                        f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
-                    )
-                    with open(datafile_ratio_plateau, "rb") as file_in:
-                        plateau_list = pickle.load(file_in)
-                    plateau_param_list = [fit["param"] for fit in plateau_list]
-                    plateau_redchisq_list = [fit["redchisq"] for fit in plateau_list]
-
-                    datafile_ratio_2exp = datadir / Path(
-                        f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
-                    )
-                    with open(datafile_ratio_2exp, "rb") as file_in:
-                        fit_params_ratio = pickle.load(file_in)
-                    [
-                        fit_param_ratio_boot,
-                        ratio_fit_boot,
-                        fit_param_ratio_avg,
-                        redchisq_ratio,
-                        best_fit,
-                    ] = fit_params_ratio
-
-                    # ======================================================================
-                    # Plot the results with plateau fits
-                    plots.plot_ratios_plateau_fit(
-                        ratio_list_reim[ir],
-                        plateau_param_list,
-                        plateau_redchisq_list,
-                        src_snk_times,
-                        delta_t_list[imom],
-                        plotdir,
-                        [mom, operators_tex[iop], pol, reim],
-                        title=f"{mom}/{pol}/ratio_plateau_fit_{reim}_{operator}",
-                    )
-                    # ======================================================================
-                    # Plot the results of the fit to the ratio
-                    plots.plot_ratio_fit_paper(
-                        ratio_list_reim[ir],
-                        ratio_fit_boot,
-                        delta_t_list[imom],
-                        src_snk_times,
-                        redchisq_ratio,
-                        fit_param_ratio_boot,
-                        plotdir,
-                        [mom, operators_tex[iop], pol, reim],
-                        title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_paper",
-                    )
-                    plots.plot_ratio_fit_together(
-                        ratio_list_reim[ir],
-                        ratio_fit_boot,
-                        delta_t_list[imom],
-                        src_snk_times,
-                        redchisq_ratio,
-                        fit_param_ratio_boot,
-                        plotdir,
-                        [mom, operators_tex[iop], pol, reim],
-                        title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_together",
-                    )
+        datafile_ratio = datadir / Path(
+            f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+        )
+        with open(datafile_ratio, "wb") as file_out:
+            pickle.dump(ratio_list_reim, file_out)
     return
 
 
-def plot_3point_zeromom_2(
+def plot_3point_zeromom(
     latticedir,
     resultsdir,
     plotdir,
@@ -1181,24 +912,6 @@ def main():
     plotdir2.mkdir(parents=True, exist_ok=True)
     datadir.mkdir(parents=True, exist_ok=True)
 
-    # # ======================================================================
-    # # Read in the 3pt. and 2pt. data, make the ratios and save them
-    # operators = [
-    #     "g01",
-    #     "g25",
-    #     "gI",
-    # ]
-    # polarizations = ["UNPOL", "POL"]
-    # momenta = ["p+0+0+0"]
-    # ratio_data = save_ratios_zeromom(
-    #     latticedir,
-    #     resultsdir,
-    #     datadir,
-    #     operators,
-    #     polarizations,
-    #     momenta,
-    # )
-
     # ======================================================================
     # Fitting to the ratios
     operators_chroma = [
@@ -1270,12 +983,22 @@ def main():
         },
     ]
 
+    # ======================================================================
+    # Make the ratios
+    save_ratios_zeromom(
+        latticedir,
+        resultsdir,
+        datadir,
+        corr_choices,
+        operators_chroma,
+    )
+
     # fit = True
     fit = False
     if fit:
         # ======================================================================
         # Construct a ratio with two 3pt functions and fit it for the zero momentum transfer case
-        fit_3point_zeromom_2(
+        fit_3point_zeromom(
             latticedir,
             resultsdir,
             plotdir,
@@ -1287,7 +1010,7 @@ def main():
 
     # ======================================================================
     # plot the results of the three-point fn ratio fits
-    plot_3point_zeromom_2(
+    plot_3point_zeromom(
         latticedir,
         resultsdir,
         plotdir,
