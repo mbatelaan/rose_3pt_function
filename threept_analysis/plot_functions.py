@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-
+import pickle
 import matplotlib.pyplot as plt
 
 # from formatting import err_brackets
@@ -19,54 +19,6 @@ _colors = [
 ]
 
 _fmts = ["s", "^", "o", ".", "p", "v", "P", ",", "*"]
-
-
-def plot_all_ratios(ratios, src_snk_times, plotdir, title=""):
-    time = np.arange(64)
-    labels = [
-        r"$t_{\mathrm{sep}}=10$",
-        r"$t_{\mathrm{sep}}=13$",
-        r"$t_{\mathrm{sep}}=16$",
-    ]
-
-    f, axarr = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(11, 5))
-    # f, axarr = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(7, 4))
-    for icorr, corr in enumerate(ratios):
-        plot_time = time[: src_snk_times[icorr]] - src_snk_times[icorr] / 2
-        plot_time2 = time - src_snk_times[icorr] / 2
-        ydata = np.average(corr, axis=0)
-        yerror = np.std(corr, axis=0)
-
-        axarr[icorr].errorbar(
-            plot_time2[1 : src_snk_times[icorr]],
-            ydata[1 : src_snk_times[icorr]],
-            yerror[1 : src_snk_times[icorr]],
-            capsize=4,
-            elinewidth=1,
-            color=_colors[icorr],
-            fmt=_fmts[icorr],
-            # markerfacecolor="none",
-            # label=labels[icorr],
-        )
-        # axarr[icorr].grid(True)
-        # axarr[icorr].legend(fontsize=15, loc="upper left")
-        axarr[icorr].set_title(labels[icorr])
-        axarr[icorr].set_xlabel(r"$\tau-t_{\mathrm{sep}}/2$", labelpad=14, fontsize=18)
-        axarr[icorr].set_ylabel(r"$R(t_{\mathrm{sep}}, \tau)$", labelpad=5, fontsize=18)
-        axarr[icorr].label_outer()
-        # axarr[icorr].set_xlim(-0.5, src_snk_times[icorr] + 0.5)
-        axarr[icorr].set_xlim(
-            plot_time2[0] - 0.5, plot_time2[src_snk_times[icorr]] + 0.5
-        )
-        # axarr[icorr].set_ylim(1.104, 1.181)
-
-    savefile = plotdir / Path(f"{title}.pdf")
-    savefile.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(savefile)
-    savefile2 = plotdir / Path(f"{title}.png")
-    plt.savefig(savefile2, dpi=50)
-    plt.close()
-    return
 
 
 def plot_ratios_plateau_fit(
@@ -436,4 +388,103 @@ def plot_ratio_fit_together(
     plt.savefig(savefile)
     # plt.show()
     plt.close()
+    return
+
+
+def plot_3point_zeromom(
+    latticedir,
+    resultsdir,
+    plotdir,
+    datadir,
+    corr_choices,
+    operators_chroma,
+    operators_tex_chroma,
+):
+    """Read the ratio for the parameters listed in the dict corr_choices,
+    Read the fit for this ratio with a plateau and 2-exp function.
+    Plot the fit results.
+    """
+
+    src_snk_times = np.array([10, 13, 16])
+    rel = "nr"
+    config_num = 999
+    sink_mom = "p0_0_0"
+
+    for ichoice, corrdata in enumerate(corr_choices):
+        mom = corrdata["momentum"]
+        operator = operators_chroma[corrdata["chroma_index"]]
+        pol = corrdata["pol"]
+        reim = corrdata["reim"]
+        ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
+        delta_t = corrdata["delta_t"]
+        delta_t_plateau = corrdata["delta_t_plateau"]
+        print(f"{ir=}")
+
+        # Read in the ratio data
+        datafile_ratio = datadir / Path(
+            f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+        )
+        with open(datafile_ratio, "rb") as file_in:
+            ratio_list_reim = pickle.load(file_in)
+
+        # for ir, reim in enumerate(["real", "imag"]):
+
+        # Read the fit results from pickle files
+        datafile_ratio_plateau = datadir / Path(
+            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
+        )
+        with open(datafile_ratio_plateau, "rb") as file_in:
+            plateau_list = pickle.load(file_in)
+        plateau_param_list = [fit["param"] for fit in plateau_list]
+        plateau_redchisq_list = [fit["redchisq"] for fit in plateau_list]
+
+        datafile_ratio_2exp = datadir / Path(
+            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
+        )
+        with open(datafile_ratio_2exp, "rb") as file_in:
+            fit_params_ratio = pickle.load(file_in)
+        [
+            fit_param_ratio_boot,
+            ratio_fit_boot,
+            fit_param_ratio_avg,
+            redchisq_ratio,
+            best_fit,
+        ] = fit_params_ratio
+
+        # ======================================================================
+        # Plot the results with plateau fits
+        plot_ratios_plateau_fit(
+            ratio_list_reim[ir],
+            plateau_param_list,
+            plateau_redchisq_list,
+            src_snk_times,
+            delta_t_plateau,
+            plotdir,
+            [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
+            title=f"{mom}/{pol}/ratio_plateau_fit_{reim}_{operator}",
+        )
+        # ======================================================================
+        # Plot the results of the fit to the ratio
+        plot_ratio_fit_paper(
+            ratio_list_reim[ir],
+            ratio_fit_boot,
+            delta_t,
+            src_snk_times,
+            redchisq_ratio,
+            fit_param_ratio_boot,
+            plotdir,
+            [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
+            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_paper",
+        )
+        plot_ratio_fit_together(
+            ratio_list_reim[ir],
+            ratio_fit_boot,
+            delta_t,
+            src_snk_times,
+            redchisq_ratio,
+            fit_param_ratio_boot,
+            plotdir,
+            [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
+            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_together",
+        )
     return

@@ -1,24 +1,15 @@
 import numpy as np
 from pathlib import Path
 
-# from BootStrap3 import bootstrap
-# import scipy.optimize as syopt
-# from scipy.optimize import curve_fit
 import pickle
-import csv
-
-from plot_utils import save_plot
 
 import matplotlib.pyplot as plt
 
 from formatting import err_brackets
 
-from analysis.evxptreaders import evxptdata
-from analysis.bootstrap import bootstrap
 from analysis import stats
 from analysis import fitfunc
 
-# from threept_analysis.twoexpfitting import fit_2ptfn
 from threept_analysis.twoexpfitting import read_pickle
 
 _metadata = {"Author": "Mischa Batelaan", "Creator": __file__}
