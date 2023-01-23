@@ -253,7 +253,7 @@ def fit_3point_zeromom(
         # ======================================================================
         # Read in the ratio data
         datafile_ratio = datadir / Path(
-            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_t16.pkl"
         )
         with open(datafile_ratio, "rb") as file_in:
             ratio_list_reim = pickle.load(file_in)
@@ -433,7 +433,7 @@ def save_ratios_zeromom(
         ]
 
         datafile_ratio = datadir / Path(
-            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_t16.pkl"
         )
         with open(datafile_ratio, "wb") as file_out:
             pickle.dump(ratio_list_reim, file_out)
