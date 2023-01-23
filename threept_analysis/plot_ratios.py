@@ -37,7 +37,7 @@ def main():
     datadir.mkdir(parents=True, exist_ok=True)
 
     # ======================================================================
-    # Fitting to the ratios
+    # Operators as defined in chroma
     operators_chroma = [
         "gI",
         "g0",
@@ -74,10 +74,13 @@ def main():
         "\gamma_1\gamma_5",
         "\gamma_5",
     ]
+    # ======================================================================
+    # List of dictionaries where each dictionary contains the parameters of the correlators we want to analyse.
     corr_choices = [
         {
             "chroma_index": 0,
             "op_name": "Scalar",
+            "quark_flavour": "U",
             "pol": "UNPOL",
             "momentum": "p+0+0+0",
             "reim": "real",
@@ -88,6 +91,7 @@ def main():
         {
             "chroma_index": 3,
             "op_name": "Tensor",
+            "quark_flavour": "U",
             "pol": "POL",
             "momentum": "p+0+0+0",
             "reim": "imag",
@@ -98,6 +102,40 @@ def main():
         {
             "chroma_index": 11,
             "op_name": "Axial",
+            "quark_flavour": "U",
+            "pol": "POL",
+            "momentum": "p+0+0+0",
+            "reim": "imag",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 4, 4],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 0,
+            "op_name": "Scalar",
+            "quark_flavour": "D",
+            "pol": "UNPOL",
+            "momentum": "p+0+0+0",
+            "reim": "real",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 6, 6],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 3,
+            "op_name": "Tensor",
+            "quark_flavour": "D",
+            "pol": "POL",
+            "momentum": "p+0+0+0",
+            "reim": "imag",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 5, 6],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 11,
+            "op_name": "Axial",
+            "quark_flavour": "D",
             "pol": "POL",
             "momentum": "p+0+0+0",
             "reim": "imag",

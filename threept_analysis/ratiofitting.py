@@ -228,6 +228,7 @@ def fit_3point_zeromom(
         mom = corrdata["momentum"]
         operator = operators_chroma[corrdata["chroma_index"]]
         operator_tex = operators_tex_chroma[corrdata["chroma_index"]]
+        flav = corrdata["quark_flavour"]
         pol = corrdata["pol"]
         reim = corrdata["reim"]
         ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
@@ -252,7 +253,7 @@ def fit_3point_zeromom(
         # ======================================================================
         # Read in the ratio data
         datafile_ratio = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
         )
         with open(datafile_ratio, "rb") as file_in:
             ratio_list_reim = pickle.load(file_in)
@@ -328,13 +329,13 @@ def fit_3point_zeromom(
         # ======================================================================
         # Save the fit results to pickle files
         datafile_ratio_plateau = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
         )
         with open(datafile_ratio_plateau, "wb") as file_out:
             pickle.dump(plateau_list, file_out)
 
         datafile_ratio_2exp = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
         )
         with open(datafile_ratio_2exp, "wb") as file_out:
             pickle.dump(fit_params_ratio, file_out)
@@ -342,7 +343,7 @@ def fit_3point_zeromom(
         # ======================================================================
         # Save the fit results to csv files
         datafile_ratio_plateau = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.csv"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.csv"
         )
         with open(datafile_ratio_plateau, "w") as csvfile:
             datawrite = csv.writer(csvfile, delimiter=",", quotechar="|")
@@ -351,7 +352,7 @@ def fit_3point_zeromom(
                 datawrite.writerow([tsink[i][0] for tsink in plateau_param_list])
 
         datafile_ratio_2exp = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.csv"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.csv"
         )
         with open(datafile_ratio_2exp, "w") as csvfile:
             datawrite = csv.writer(csvfile, delimiter=",", quotechar="|")
@@ -381,9 +382,15 @@ def save_ratios_zeromom(
     for ichoice, corrdata in enumerate(corr_choices):
         mom = corrdata["momentum"]
         operator = operators_chroma[corrdata["chroma_index"]]
+        flav = corrdata["quark_flavour"]
         pol = corrdata["pol"]
         reim = corrdata["reim"]
         ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
+
+        if flav == "U":
+            kappa_FH = "kp120900tkp120900_kp120900kp120900"
+        elif flav == "D":
+            kappa_FH = "kp120900tkp120900_kp120900"
 
         # ======================================================================
         # Read the two-point function data
@@ -395,13 +402,13 @@ def save_ratios_zeromom(
 
         # Read in the 3pt function data
         threeptfn_pickle_t10 = latticedir / Path(
-            f"bar3ptfn_t10_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t10_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_pickle_t13 = latticedir / Path(
-            f"bar3ptfn_t13_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t13_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_pickle_t16 = latticedir / Path(
-            f"bar3ptfn_t16_U/bar3ptfn/32x64/unpreconditioned_slrc/kp120900tkp120900_kp120900kp120900/NUCL_U_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t16_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_t10 = read_pickle(threeptfn_pickle_t10, nboot=500, nbin=1)
         threeptfn_t13 = read_pickle(threeptfn_pickle_t13, nboot=500, nbin=1)
@@ -426,7 +433,7 @@ def save_ratios_zeromom(
         ]
 
         datafile_ratio = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
         )
         with open(datafile_ratio, "wb") as file_out:
             pickle.dump(ratio_list_reim, file_out)
@@ -434,6 +441,7 @@ def save_ratios_zeromom(
 
 
 def main():
+    # Plot style
     plt.style.use("./mystyle.txt")
     plt.rc("text.latex", preamble=r"\usepackage{physics}")
 
@@ -449,7 +457,7 @@ def main():
     datadir.mkdir(parents=True, exist_ok=True)
 
     # ======================================================================
-    # Fitting to the ratios
+    # Operators as defined in chroma
     operators_chroma = [
         "gI",
         "g0",
@@ -487,10 +495,13 @@ def main():
         "\gamma_5",
     ]
 
+    # ======================================================================
+    # List of dictionaries where each dictionary contains the parameters of the correlators we want to analyse. The code will loop over each of the choices and run the analysis.
     corr_choices = [
         {
             "chroma_index": 0,
             "op_name": "Scalar",
+            "quark_flavour": "U",
             "pol": "UNPOL",
             "momentum": "p+0+0+0",
             "reim": "real",
@@ -501,6 +512,7 @@ def main():
         {
             "chroma_index": 3,
             "op_name": "Tensor",
+            "quark_flavour": "U",
             "pol": "POL",
             "momentum": "p+0+0+0",
             "reim": "imag",
@@ -511,6 +523,40 @@ def main():
         {
             "chroma_index": 11,
             "op_name": "Axial",
+            "quark_flavour": "U",
+            "pol": "POL",
+            "momentum": "p+0+0+0",
+            "reim": "imag",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 4, 4],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 0,
+            "op_name": "Scalar",
+            "quark_flavour": "D",
+            "pol": "UNPOL",
+            "momentum": "p+0+0+0",
+            "reim": "real",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 6, 6],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 3,
+            "op_name": "Tensor",
+            "quark_flavour": "D",
+            "pol": "POL",
+            "momentum": "p+0+0+0",
+            "reim": "imag",
+            "delta_t": 4,
+            "delta_t_plateau": [4, 5, 6],
+            "tmin_choice": 4,
+        },
+        {
+            "chroma_index": 11,
+            "op_name": "Axial",
+            "quark_flavour": "D",
             "pol": "POL",
             "momentum": "p+0+0+0",
             "reim": "imag",
@@ -521,7 +567,7 @@ def main():
     ]
 
     # ======================================================================
-    # Make the ratios
+    # Read in the 2pt. an d 3pt. correlators, construct the ratios and save them to files
     save_ratios_zeromom(
         latticedir,
         resultsdir,

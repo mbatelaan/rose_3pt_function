@@ -86,8 +86,8 @@ def plot_ratios_plateau_fit(
     savefile = plotdir / Path(f"{title}.pdf")
     savefile.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(savefile)
-    savefile2 = plotdir / Path(f"{title}.png")
-    plt.savefig(savefile2, dpi=50)
+    # savefile2 = plotdir / Path(f"{title}.png")
+    # plt.savefig(savefile2, dpi=50)
     plt.close()
     return
 
@@ -202,12 +202,12 @@ def plot_ratio_fit_paper(
 
     savefile = plotdir / Path(f"{title}.pdf")
     # savefile_ylim = plotdir / Path(f"{title}_ylim.pdf")
-    savefile2 = plotdir / Path(f"{title}.png")
-    savefile3 = plotdir / Path(f"{title}_small.png")
+    # savefile2 = plotdir / Path(f"{title}.png")
+    # savefile3 = plotdir / Path(f"{title}_small.png")
     savefile.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(savefile)
     # plt.savefig(savefile2, dpi=500)
-    plt.savefig(savefile3, dpi=100)
+    # plt.savefig(savefile3, dpi=100)
     # plt.ylim(1.104, 1.181)
     # plt.savefig(savefile_ylim)
     # plt.show()
@@ -408,44 +408,40 @@ def plot_3point_zeromom(
     config_num = 999
     sink_mom = "p0_0_0"
 
+    # Loop over the parameter choices
     for ichoice, corrdata in enumerate(corr_choices):
         mom = corrdata["momentum"]
         operator = operators_chroma[corrdata["chroma_index"]]
+        flav = corrdata["quark_flavour"]
         pol = corrdata["pol"]
         reim = corrdata["reim"]
         ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
         delta_t = corrdata["delta_t"]
         delta_t_plateau = corrdata["delta_t_plateau"]
-        print(f"{ir=}")
 
         # Read in the ratio data
         datafile_ratio = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_3pt_ratios_t10_t13_16.pkl"
         )
         with open(datafile_ratio, "rb") as file_in:
             ratio_list_reim = pickle.load(file_in)
 
         # Read the fit results from pickle files
+        # Ratio fit
         datafile_ratio_plateau = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
         )
         with open(datafile_ratio_plateau, "rb") as file_in:
             plateau_list = pickle.load(file_in)
         plateau_param_list = [fit["param"] for fit in plateau_list]
         plateau_redchisq_list = [fit["redchisq"] for fit in plateau_list]
 
+        # Two-exp fit
         datafile_ratio_2exp = datadir / Path(
-            f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
+            f"{mom}_{operator}_{flav}_{pol}_{rel}_{reim}_3pt_ratio_2exp_fit.pkl"
         )
         with open(datafile_ratio_2exp, "rb") as file_in:
             fit_params_ratio = pickle.load(file_in)
-        # [
-        #     fit_param_ratio_boot,
-        #     ratio_fit_boot,
-        #     fit_param_ratio_avg,
-        #     redchisq_ratio,
-        #     best_fit,
-        # ] = fit_params_ratio
         fit_param_ratio_boot = fit_params_ratio["fit_param_boot"]
         ratio_fit_boot = fit_params_ratio["fitted_ratio_boot"]
         redchisq_ratio = fit_params_ratio["red_chisq_fit"]
@@ -461,10 +457,10 @@ def plot_3point_zeromom(
             delta_t_plateau,
             plotdir,
             [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
-            title=f"{mom}/{pol}/ratio_plateau_fit_{reim}_{operator}",
+            title=f"{mom}/{pol}/ratio_plateau_fit_{reim}_{operator}_{flav}",
         )
         # ======================================================================
-        # Plot the results of the fit to the ratio
+        # Plot the results of two-exp fit to the ratio
         plot_ratio_fit_paper(
             ratio_list_reim[ir],
             ratio_fit_boot,
@@ -474,7 +470,7 @@ def plot_3point_zeromom(
             fit_param_ratio_boot,
             plotdir,
             [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
-            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_paper",
+            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{flav}_{mom}_paper",
         )
         plot_ratio_fit_together(
             ratio_list_reim[ir],
@@ -485,6 +481,6 @@ def plot_3point_zeromom(
             fit_param_ratio_boot,
             plotdir,
             [mom, operators_tex_chroma[corrdata["chroma_index"]], pol, reim],
-            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{mom}_together",
+            title=f"{mom}/{pol}/ratio_2expfit_{reim}_{operator}_{flav}_{mom}_together",
         )
     return
