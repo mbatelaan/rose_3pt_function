@@ -3,8 +3,6 @@ from pathlib import Path
 import pickle
 import matplotlib.pyplot as plt
 
-# from formatting import err_brackets
-
 _metadata = {"Author": "Mischa Batelaan", "Creator": __file__}
 
 _colors = [
@@ -427,8 +425,6 @@ def plot_3point_zeromom(
         with open(datafile_ratio, "rb") as file_in:
             ratio_list_reim = pickle.load(file_in)
 
-        # for ir, reim in enumerate(["real", "imag"]):
-
         # Read the fit results from pickle files
         datafile_ratio_plateau = datadir / Path(
             f"{mom}_{operator}_{pol}_{rel}_{reim}_3pt_ratio_plateau_fit.pkl"
@@ -443,13 +439,17 @@ def plot_3point_zeromom(
         )
         with open(datafile_ratio_2exp, "rb") as file_in:
             fit_params_ratio = pickle.load(file_in)
-        [
-            fit_param_ratio_boot,
-            ratio_fit_boot,
-            fit_param_ratio_avg,
-            redchisq_ratio,
-            best_fit,
-        ] = fit_params_ratio
+        # [
+        #     fit_param_ratio_boot,
+        #     ratio_fit_boot,
+        #     fit_param_ratio_avg,
+        #     redchisq_ratio,
+        #     best_fit,
+        # ] = fit_params_ratio
+        fit_param_ratio_boot = fit_params_ratio["fit_param_boot"]
+        ratio_fit_boot = fit_params_ratio["fitted_ratio_boot"]
+        redchisq_ratio = fit_params_ratio["red_chisq_fit"]
+        delta_t = fit_params_ratio["delta_t"]
 
         # ======================================================================
         # Plot the results with plateau fits

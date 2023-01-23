@@ -297,14 +297,33 @@ def fit_3point_zeromom(
             delta_t,
             fitfnc_2exp,
         )
-        fit_params_ratio = [
-            fit_param_ratio_boot,
-            ratio_fit_boot,
-            fit_param_ratio_avg,
-            redchisq_ratio,
+        # fit_params_ratio = [
+        #     fit_param_ratio_boot,
+        #     ratio_fit_boot,
+        #     fit_param_ratio_avg,
+        #     redchisq_ratio,
+        #     # best_fit,
+        #     delta_t,
+        # ]
+        fit_params_ratio = {
+            "fit_param_boot": fit_param_ratio_boot,
+            "fitted_ratio_boot": ratio_fit_boot,
+            # "" : fit_param_ratio_avg,
+            "red_chisq_fit": redchisq_ratio,
             # best_fit,
-            delta_t,
-        ]
+            "delta_t": delta_t,
+        }
+
+        # three_exp_fitting = {
+        #     "ratio_data_t10_t13_t16": ratio_list_reim[ir],
+        #     "t10_plateau_fit": t10_plateau_fit,
+        #     "t13_plateau_fit": t13_plateau_fit,
+        #     "t16_plateau_fit": t16_plateau_fit,
+        #     "2expfit_param_boot": fit_param_ratio_boot,
+        #     "2expfitted_ratio_boot": ratio_fit_boot,
+        #     "red_chisq_fit": redchisq_ratio,
+        #     "delta_t": delta_t,
+        # }
 
         # ======================================================================
         # Save the fit results to pickle files
