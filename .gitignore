@@ -2,3 +2,5 @@
 *.pdf
 *.pyc
 *.egg-info
+*.csv
+*.pkl

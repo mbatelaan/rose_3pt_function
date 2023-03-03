@@ -6,11 +6,10 @@ import pickle
 import matplotlib.pyplot as plt
 
 from formatting import err_brackets
-
+from analysis.bootstrap import bootstrap
 from analysis import stats
 from analysis import fitfunc
 
-from threept_analysis.twoexpfitting import read_pickle
 
 _metadata = {"Author": "Mischa Batelaan", "Creator": __file__}
 
@@ -26,6 +25,20 @@ _colors = [
 ]
 
 _fmts = ["s", "^", "o", ".", "p", "v", "P", ",", "*"]
+
+
+def read_pickle(filename, nboot=200, nbin=1):
+    """Get the data from the pickle file and output a bootstrapped numpy array.
+
+    The output is a numpy matrix with:
+    axis=0: bootstraps
+    axis=2: time axis
+    axis=3: real & imaginary parts
+    """
+    with open(filename, "rb") as file_in:
+        data = pickle.load(file_in)
+    bsdata = bootstrap(data, config_ax=0, nboot=nboot, nbin=nbin)
+    return bsdata
 
 
 def read_2ptfn(
@@ -80,7 +93,7 @@ def fit_2ptfn_2exp_old(latticedir, plotdir, datadir, rel="rel"):
             twoptfn_filename = latticedir / Path(
                 f"twoptfn/barspec/32x64/unpreconditioned_slrc/kp120900kp120900/sh_gij_p21_75-sh_gij_p21_75/{mom}/barspec_nucleon_{rel}_{config_num}cfgs.pickle"
             )
-            twopoint_fn = read_pickle(twopointfn_filename, nboot=500, nbin=1)
+            twopoint_fn = read_pickle(twoptfn_filename, nboot=500, nbin=1)
 
             # Plot the effective mass of the two-point function
             twopoint_fn_real = twopoint_fn[:, :, 0]
@@ -101,12 +114,23 @@ def fit_2ptfn_2exp_old(latticedir, plotdir, datadir, rel="rel"):
     return
 
 
-def fit_2ptfn_2exp(twopt_corrs, kappa_combs, momenta, plotdir, datadir, rel="nr"):
+def fit_2ptfn_2exp(
+    twopt_corrs, kappa_combs, momenta, plotdir, datadir, time_limits, rel="nr"
+):
     """Read the two-point function and fit a two-exponential function to it over a range of fit windows, then save the fit data to pickle files."""
 
     fitfunction = fitfunc.initffncs("Twoexp_log")
     # time_limits = [[[2, 15], [20, 27]]]
-    time_limits = [[[2, 15], [25, 25]]]
+    # time_limits = [[[2, 15], [25, 25]]]
+    # time_limits = [
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    #     [[2, 15], [25, 25]],
+    # ]
 
     for ikappa, kappa in enumerate(kappa_combs):
         print(f"\n{kappa}")
@@ -124,7 +148,7 @@ def fit_2ptfn_2exp(twopt_corrs, kappa_combs, momenta, plotdir, datadir, rel="nr"
                 disp=True,
                 time=False,
                 weights_=True,
-                timeslice=17,
+                timeslice=time_limits[imom][0][1],
             )
 
             datafile = datadir / Path(f"{kappa}_{mom}_{rel}_fitlist_2pt_2exp.pkl")
@@ -780,7 +804,7 @@ def main():
     plt.rc("text.latex", preamble=r"\usepackage{physics}")
 
     # --- directories ---
-    latticedir = Path.home() / Path("Documents/PhD/lattice_results/rose_3pt_function/")
+    latticedir = Path.home() / Path("Documents/PhD/lattice_results/EMFF_3pt_function/")
     resultsdir = Path.home() / Path("Dropbox/PhD/analysis_code/rose_3pt_function/")
     plotdir = resultsdir / Path("plots/")
     plotdir2 = plotdir / Path("twopoint/")
@@ -790,21 +814,49 @@ def main():
     plotdir2.mkdir(parents=True, exist_ok=True)
     datadir.mkdir(parents=True, exist_ok=True)
 
-    momenta = ["p+0+0+0"]
+    # momenta = ["p+0+0+0"]
     # tmin_choice = [5, 4, 4]
     # tmin_choice = [7, 7, 7]
-    tmin_choice = [4, 4, 4]
-
+    # tmin_choice = [4, 4, 4]
+    tmin_choice = [
+        [4, 4, 4],
+        [4, 4, 4],
+        [4, 4, 4],
+        [4, 4, 4],
+        [4, 4, 4],
+        [4, 4, 4],
+        [4, 4, 4],
+    ]
     # ======================================================================
     # Read the two-point functions and fit a two-exponential function to it
 
     # eff_energy_n = stats.bs_effmass(best_fit_n["y"], time_axis=1, spacing=1)
 
     kappa_combs = ["kp120900kp120900"]
-    momenta = ["p+0+0+0"]
+    # momenta = ["p+0+0+0"]
+    momenta = [
+        # "p+0+0+0",
+        # "p+1+0+0",
+        # "p-1+0+0",
+        # "p+1+1+1",
+        # "p-1-1-1",
+        "p+2+1+0",
+        "p-2-1+0",
+    ]
+    time_limits = [
+        # [[2, 15], [15, 25]],
+        # [[2, 15], [15, 25]],
+        # [[2, 15], [15, 25]],
+        # [[2, 15], [12, 18]],
+        # [[2, 15], [12, 18]],
+        [[2, 8], [11, 12]],
+        [[2, 8], [11, 12]],
+    ]
     config_num = 999
     nboot = 500
     lattice_time_exent = 64
+
+    # for momentum in momenta:
     twopt_correlators = read_2ptfn(
         latticedir,
         kappa_combs,
@@ -815,15 +867,17 @@ def main():
         datadir,
         rel="rel",
     )
-    eff_energy = stats.bs_effmass(
-        twopt_correlators[0, 0, :, :, 0],
-        time_axis=1,
-        spacing=1,
-        plot=True,
-        savefile=plotdir2 / Path(f"twopoint_effmass.pdf"),
-    )
+    # eff_energy = stats.bs_effmass(
+    #     twopt_correlators[0, 0, :, :, 0],
+    #     time_axis=1,
+    #     spacing=1,
+    #     plot=True,
+    #     savefile=plotdir2 / Path(f"twopoint_effmass.pdf"),
+    # )
 
-    fit_2ptfn_2exp(twopt_correlators, kappa_combs, momenta, plotdir, datadir, rel="nr")
+    fit_2ptfn_2exp(
+        twopt_correlators, kappa_combs, momenta, plotdir, datadir, time_limits, rel="nr"
+    )
 
     read_2pt_fits_2exp(
         twopt_correlators, kappa_combs, momenta, plotdir, datadir, tmin_choice, rel="nr"
