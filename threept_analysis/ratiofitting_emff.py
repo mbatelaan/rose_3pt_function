@@ -29,7 +29,7 @@ _colors = [
 _fmts = ["s", "^", "o", ".", "p", "v", "P", ",", "*"]
 
 
-def select_2pt_fit(fit_data_list, tmin_choice, datadir, mom, weight_tol=0.01):
+def select_2pt_fit(fit_data_list, tmin_choice, datadir, weight_tol=0.01):
     """Sort through the fits to the two-point function and pick out one fit result that has the chosen tmin and tmax"""
     # weight_tol = 0.01
     fitweights = np.array([fit["weight"] for fit in fit_data_list])
@@ -368,7 +368,6 @@ def fit_3point_zeromom(
             fit_data,
             tmin_choice,
             datadir,
-            mom,
         )
 
         # ======================================================================
@@ -508,15 +507,24 @@ def fit_3point_nonzeromom(
     config_num = 999
     nboot = 500
 
-    # sink_mom = "p0_0_0"
-    # fitfnc_2exp = ff.threept_ratio_zeromom
-    # transition = "n2sig"
-    # src_snk_times = np.array([10, 13, 16])
-    # rel = "nr"
     for ichoice, corrdata in enumerate(corr_choices):
-        mom = corrdata["momentum"]
-        sink_mom = corrdata["sink_mom"]
-        source_mom = corrdata["source_mom"]
+        # mom = corrdata["momentum"]
+        # sink_mom = corrdata["sink_mom"]
+        # source_mom = corrdata["source_mom"]
+
+        snk_mom = corrdata["snk_mom"]
+        mom_ = corrdata["mom"]
+        src_mom = snk_mom - mom_
+        source_mom = FormatMom(src_mom)
+        sink_mom = FormatMom(snk_mom)
+        mom = FormatMom(mom_)
+
+        # Because the picklelime code mislabels the sign on the source momenta
+        neg_src_mom = -src_mom
+        neg_snk_mom = -snk_mom
+        neg_source_mom = FormatMom(neg_src_mom)
+        neg_sink_mom = FormatMom(neg_snk_mom)
+
         operator = operators_chroma[corrdata["chroma_index"]]
         operator_tex = operators_tex_chroma[corrdata["chroma_index"]]
         flav = corrdata["quark_flavour"]
@@ -532,7 +540,7 @@ def fit_3point_nonzeromom(
         kappa_combs = ["kp120900kp120900"]
         # source
         datafile_source = datadir / Path(
-            f"{kappa_combs[0]}_{source_mom}_{rel}_fitlist_2pt_2exp.pkl"
+            f"{kappa_combs[0]}_{neg_source_mom}_{rel}_fitlist_2pt_2exp.pkl"
         )
         with open(datafile_source, "rb") as file_in:
             fit_data_source = pickle.load(file_in)
@@ -541,11 +549,10 @@ def fit_3point_nonzeromom(
             fit_data_source,
             tmin_choice,
             datadir,
-            mom,
         )
         # sink
         datafile_sink = datadir / Path(
-            f"{kappa_combs[0]}_{sink_mom}_{rel}_fitlist_2pt_2exp.pkl"
+            f"{kappa_combs[0]}_{neg_sink_mom}_{rel}_fitlist_2pt_2exp.pkl"
         )
         with open(datafile_sink, "rb") as file_in:
             fit_data_sink = pickle.load(file_in)
@@ -554,7 +561,6 @@ def fit_3point_nonzeromom(
             fit_data_sink,
             tmin_choice,
             datadir,
-            mom,
         )
 
         # ======================================================================
@@ -729,6 +735,10 @@ def save_ratios_zeromom(
     return
 
 
+def FormatMom(mom):
+    return "p" + "".join([f"{mom_i:+d}" for mom_i in mom])
+
+
 def save_ratios_nonzeromom(
     latticedir,
     resultsdir,
@@ -743,12 +753,23 @@ def save_ratios_nonzeromom(
     config_num = 999
     nboot = 500
     lattice_time_exent = 64
-    # sink_mom = "p+0+0+0"
 
     for ichoice, corrdata in enumerate(corr_choices):
-        mom = corrdata["momentum"]
-        sink_mom = corrdata["sink_mom"]
-        source_mom = corrdata["source_mom"]
+        snk_mom = corrdata["snk_mom"]
+        mom_ = corrdata["mom"]
+        src_mom = snk_mom - mom_
+        source_mom = FormatMom(src_mom)
+        sink_mom = FormatMom(snk_mom)
+        mom = FormatMom(mom_)
+
+        # Because the picklelime code mislabels the sign on the source momenta
+        neg_src_mom = -src_mom
+        neg_snk_mom = -snk_mom
+        neg_source_mom = FormatMom(neg_src_mom)
+        neg_sink_mom = FormatMom(neg_snk_mom)
+        print(f"{neg_source_mom=}")
+        print(f"{neg_sink_mom=}")
+
         operator = operators_chroma[corrdata["chroma_index"]]
         flav = corrdata["quark_flavour"]
         pol = corrdata["pol"]
@@ -765,27 +786,27 @@ def save_ratios_nonzeromom(
         # Read the two-point function data
         # source momentum
         twoptfn_filename_source = latticedir / Path(
-            f"twoptfn/barspec/32x64/unpreconditioned_slrc/kp120900kp120900/sh_gij_p21_75-sh_gij_p21_75/{source_mom}/barspec_nucleon_{rel}_{config_num}cfgs.pickle"
+            f"twoptfn/barspec/32x64/unpreconditioned_slrc/kp120900kp120900/sh_gij_p21_75-sh_gij_p21_75/{neg_source_mom}/barspec_nucleon_{rel}_{config_num}cfgs.pickle"
         )
         twoptfn_source = read_pickle(twoptfn_filename_source, nboot=500, nbin=1)
         twoptfn_source_real = twoptfn_source[:, :, 0]
 
         # sink momentum
         twoptfn_filename_sink = latticedir / Path(
-            f"twoptfn/barspec/32x64/unpreconditioned_slrc/kp120900kp120900/sh_gij_p21_75-sh_gij_p21_75/{sink_mom}/barspec_nucleon_{rel}_{config_num}cfgs.pickle"
+            f"twoptfn/barspec/32x64/unpreconditioned_slrc/kp120900kp120900/sh_gij_p21_75-sh_gij_p21_75/{neg_sink_mom}/barspec_nucleon_{rel}_{config_num}cfgs.pickle"
         )
         twoptfn_sink = read_pickle(twoptfn_filename_sink, nboot=500, nbin=1)
         twoptfn_sink_real = twoptfn_sink[:, :, 0]
 
         # Read in the 3pt function data
         threeptfn_pickle_t10 = latticedir / Path(
-            f"bar3ptfn_t10_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t10_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t10_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{neg_source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_pickle_t13 = latticedir / Path(
-            f"bar3ptfn_t13_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t13_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t13_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{neg_source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_pickle_t16 = latticedir / Path(
-            f"bar3ptfn_t16_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
+            f"bar3ptfn_t16_{flav}/bar3ptfn/32x64/unpreconditioned_slrc/{kappa_FH}/NUCL_{flav}_{pol}_NONREL_gI_t16_{sink_mom}/sh_gij_p21_75-sh_gij_p21_75/{neg_source_mom}/bar3ptfn_{operator}_{config_num}cfgs.pickle"
         )
         threeptfn_t10 = read_pickle(threeptfn_pickle_t10, nboot=500, nbin=1)
         threeptfn_t13 = read_pickle(threeptfn_pickle_t13, nboot=500, nbin=1)
@@ -1013,9 +1034,11 @@ def main():
             "op_name": "Vector4",
             "quark_flavour": "U",
             "pol": "UNPOL",
-            "momentum": "p+2+0+0",
-            "source_mom": "p+1+0+0",
-            "sink_mom": "p+1+0+0",
+            # "momentum": "p+2+0+0",
+            # "source_mom": "p-1+0+0",
+            # "sink_mom": "p+1+0+0",
+            "snk_mom": np.array([1, 0, 0]),
+            "mom": np.array([2, 0, 0]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1026,9 +1049,11 @@ def main():
             "op_name": "Vector4",
             "quark_flavour": "D",
             "pol": "UNPOL",
-            "momentum": "p+2+0+0",
-            "source_mom": "p+1+0+0",
-            "sink_mom": "p+1+0+0",
+            # "momentum": "p+2+0+0",
+            # "source_mom": "p+1+0+0",
+            # "sink_mom": "p-1+0+0",
+            "snk_mom": np.array([1, 0, 0]),
+            "mom": np.array([2, 0, 0]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1039,9 +1064,11 @@ def main():
             "op_name": "Vector4",
             "quark_flavour": "U",
             "pol": "UNPOL",
-            "momentum": "p+2+2+2",
-            "source_mom": "p+1+1+1",
-            "sink_mom": "p+1+1+1",
+            # "momentum": "p+2+2+2",
+            # "source_mom": "p+1+1+1",
+            # "sink_mom": "p+1+1+1",
+            "snk_mom": np.array([1, 1, 1]),
+            "mom": np.array([2, 2, 2]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1052,74 +1079,60 @@ def main():
             "op_name": "Vector4",
             "quark_flavour": "D",
             "pol": "UNPOL",
-            "momentum": "p+2+2+2",
-            "source_mom": "p+1+1+1",
-            "sink_mom": "p+1+1+1",
+            # "momentum": "p+2+2+2",
+            # "source_mom": "p+1+1+1",
+            # "sink_mom": "p+1+1+1",
+            "snk_mom": np.array([1, 1, 1]),
+            "mom": np.array([2, 2, 2]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
             "tmin_choice": 4,
         },
-        {
-            "chroma_index": 8,
-            "op_name": "Vector4",
-            "quark_flavour": "U",
-            "pol": "UNPOL",
-            "momentum": "p+4+2+0",
-            "source_mom": "p+2+1+0",
-            "sink_mom": "p+2+1+0",
-            "reim": "real",
-            "delta_t": 4,
-            "delta_t_plateau": [4, 6, 6],
-            "tmin_choice": 4,
-        },
-        {
-            "chroma_index": 8,
-            "op_name": "Vector4",
-            "quark_flavour": "D",
-            "pol": "UNPOL",
-            "momentum": "p+4+2+0",
-            "source_mom": "p+2+1+0",
-            "sink_mom": "p+2+1+0",
-            "reim": "real",
-            "delta_t": 4,
-            "delta_t_plateau": [4, 6, 6],
-            "tmin_choice": 4,
-        },
-        {
-            "chroma_index": 2,
-            "op_name": "Vector2",
-            "quark_flavour": "U",
-            "pol": "POL",
-            "momentum": "p+2+0+0",
-            "source_mom": "p+1+0+0",
-            "sink_mom": "p+1+0+0",
-            "reim": "real",
-            "delta_t": 4,
-            "delta_t_plateau": [4, 6, 6],
-            "tmin_choice": 4,
-        },
-        {
-            "chroma_index": 2,
-            "op_name": "Vector2",
-            "quark_flavour": "D",
-            "pol": "POL",
-            "momentum": "p+2+0+0",
-            "source_mom": "p+1+0+0",
-            "sink_mom": "p+1+0+0",
-            "reim": "real",
-            "delta_t": 4,
-            "delta_t_plateau": [4, 6, 6],
-            "tmin_choice": 4,
-        },
+        # ]
+        # corr_choices = [
+        # {
+        #     "chroma_index": 8,
+        #     "op_name": "Vector4",
+        #     "quark_flavour": "U",
+        #     "pol": "UNPOL",
+        #     # "momentum": "p+4+2+0",
+        #     # "source_mom": "p+2+1+0",
+        #     # "sink_mom": "p+2+1+0",
+        #     "snk_mom": np.array([2, 1, 0]),
+        #     "mom": np.array([4, 2, 0]),
+        #     "reim": "real",
+        #     "delta_t": 4,
+        #     "delta_t_plateau": [4, 6, 6],
+        #     "tmin_choice": 4,
+        # },
+        # {
+        #     "chroma_index": 8,
+        #     "op_name": "Vector4",
+        #     "quark_flavour": "D",
+        #     "pol": "UNPOL",
+        #     # "momentum": "p+4+2+0",
+        #     # "source_mom": "p+2+1+0",
+        #     # "sink_mom": "p+2+1+0",
+        #     "snk_mom": np.array([2, 1, 0]),
+        #     "mom": np.array([4, 2, 0]),
+        #     "reim": "real",
+        #     "delta_t": 4,
+        #     "delta_t_plateau": [4, 6, 6],
+        #     "tmin_choice": 4,
+        # },
+        # ]
+        # corr_choices_ = [
         {
             "chroma_index": 2,
             "op_name": "Vector2",
             "quark_flavour": "U",
             "pol": "POL",
-            "momentum": "p+2+2+2",
-            "source_mom": "p+1+1+1",
-            "sink_mom": "p+1+1+1",
+            # "momentum": "p+2+0+0",
+            # "source_mom": "p+1+0+0",
+            # "sink_mom": "p+1+0+0",
+            "snk_mom": np.array([1, 0, 0]),
+            "mom": np.array([2, 0, 0]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1130,9 +1143,11 @@ def main():
             "op_name": "Vector2",
             "quark_flavour": "D",
             "pol": "POL",
-            "momentum": "p+2+2+2",
-            "source_mom": "p+1+1+1",
-            "sink_mom": "p+1+1+1",
+            # "momentum": "p+2+0+0",
+            # "source_mom": "p+1+0+0",
+            # "sink_mom": "p+1+0+0",
+            "snk_mom": np.array([1, 0, 0]),
+            "mom": np.array([2, 0, 0]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1143,9 +1158,11 @@ def main():
             "op_name": "Vector2",
             "quark_flavour": "U",
             "pol": "POL",
-            "momentum": "p+4+2+0",
-            "source_mom": "p+2+1+0",
-            "sink_mom": "p+2+1+0",
+            # "momentum": "p+2+2+2",
+            # "source_mom": "p+1+1+1",
+            # "sink_mom": "p+1+1+1",
+            "snk_mom": np.array([1, 1, 1]),
+            "mom": np.array([2, 2, 2]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
@@ -1156,14 +1173,46 @@ def main():
             "op_name": "Vector2",
             "quark_flavour": "D",
             "pol": "POL",
-            "momentum": "p+4+2+0",
-            "source_mom": "p+2+1+0",
-            "sink_mom": "p+2+1+0",
+            # "momentum": "p+2+2+2",
+            # "source_mom": "p+1+1+1",
+            # "sink_mom": "p+1+1+1",
+            "snk_mom": np.array([1, 1, 1]),
+            "mom": np.array([2, 2, 2]),
             "reim": "real",
             "delta_t": 4,
             "delta_t_plateau": [4, 6, 6],
             "tmin_choice": 4,
         },
+        # {
+        #     "chroma_index": 2,
+        #     "op_name": "Vector2",
+        #     "quark_flavour": "U",
+        #     "pol": "POL",
+        #     # "momentum": "p+4+2+0",
+        #     # "source_mom": "p+2+1+0",
+        #     # "sink_mom": "p+2+1+0",
+        #     "snk_mom": np.array([2, 1, 0]),
+        #     "mom": np.array([4, 2, 0]),
+        #     "reim": "real",
+        #     "delta_t": 4,
+        #     "delta_t_plateau": [4, 6, 6],
+        #     "tmin_choice": 4,
+        # },
+        # {
+        #     "chroma_index": 2,
+        #     "op_name": "Vector2",
+        #     "quark_flavour": "D",
+        #     "pol": "POL",
+        #     # "momentum": "p+4+2+0",
+        #     # "source_mom": "p+2+1+0",
+        #     # "sink_mom": "p+2+1+0",
+        #     "snk_mom": np.array([2, 1, 0]),
+        #     "mom": np.array([4, 2, 0]),
+        #     "reim": "real",
+        #     "delta_t": 4,
+        #     "delta_t_plateau": [4, 6, 6],
+        #     "tmin_choice": 4,
+        # },
     ]
 
     # ======================================================================
@@ -1208,10 +1257,11 @@ def main():
             operators_chroma,
             operators_tex_chroma,
         )
+        print("")
 
     # ======================================================================
     # plot the results of the three-point fn ratio fits
-    # plots.plot_3point_zeromom(
+    # plots.Plot_3point_zeromom(
     #     latticedir,
     #     resultsdir,
     #     plotdir,

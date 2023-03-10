@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 import matplotlib.pyplot as plt
 from ratiofitting_emff import select_2pt_fit
+from ratiofitting_emff import FormatMom
 from analysis import stats
 from analysis import fitfunc
 
@@ -1076,9 +1077,24 @@ def plot_3point_nonzeromom(
 
     # Loop over the parameter choices
     for ichoice, corrdata in enumerate(corr_choices):
-        mom = corrdata["momentum"]
-        sink_mom = corrdata["sink_mom"]
-        source_mom = corrdata["source_mom"]
+        print("\n", ichoice)
+        # mom = corrdata["momentum"]
+        # sink_mom = corrdata["sink_mom"]
+        # source_mom = corrdata["source_mom"]
+
+        snk_mom = corrdata["snk_mom"]
+        mom_ = corrdata["mom"]
+        src_mom = snk_mom - mom_
+        source_mom = FormatMom(src_mom)
+        sink_mom = FormatMom(snk_mom)
+        mom = FormatMom(mom_)
+
+        # Because the picklelime code mislabels the sign on the source momenta
+        neg_src_mom = -src_mom
+        neg_snk_mom = -snk_mom
+        neg_source_mom = FormatMom(neg_src_mom)
+        neg_sink_mom = FormatMom(neg_snk_mom)
+
         operator = operators_chroma[corrdata["chroma_index"]]
         flav = corrdata["quark_flavour"]
         pol = corrdata["pol"]
@@ -1086,6 +1102,7 @@ def plot_3point_nonzeromom(
         ir = np.where(np.array(["real", "imag"]) == reim)[0][0]
         delta_t = corrdata["delta_t"]
         delta_t_plateau = corrdata["delta_t_plateau"]
+        print(f"{mom=}, {operator=}, {flav=}, {pol=}")
 
         # Read in the ratio data
         datafile_ratio = datadir / Path(
@@ -1114,6 +1131,7 @@ def plot_3point_nonzeromom(
         ratio_fit_boot = fit_params_ratio["fitted_ratio_boot"]
         redchisq_ratio = fit_params_ratio["red_chisq_fit"]
         delta_t = fit_params_ratio["delta_t"]
+        print("red. chisq = ", fit_params_ratio["red_chisq_fit"])
 
         # ======================================================================
         # Plot the results with plateau fits
@@ -1176,10 +1194,24 @@ def plot_3point_nonzeromom_comp(
     config_num = 999
     # Loop over the parameter choices
     for ichoice, corrdata in enumerate(corr_choices):
-        mom = corrdata["momentum"]
+        # mom = corrdata["momentum"]
+        # sink_mom = corrdata["sink_mom"]
+        # source_mom = corrdata["source_mom"]
+
+        snk_mom = corrdata["snk_mom"]
+        mom_ = corrdata["mom"]
+        src_mom = snk_mom - mom_
+        source_mom = FormatMom(src_mom)
+        sink_mom = FormatMom(snk_mom)
+        mom = FormatMom(mom_)
         mom_index1 = float(mom[2])
-        sink_mom = corrdata["sink_mom"]
-        source_mom = corrdata["source_mom"]
+
+        # Because the picklelime code mislabels the sign on the source momenta
+        neg_src_mom = -src_mom
+        neg_snk_mom = -snk_mom
+        neg_source_mom = FormatMom(neg_src_mom)
+        neg_sink_mom = FormatMom(neg_snk_mom)
+
         operator = operators_chroma[corrdata["chroma_index"]]
         op_index = corrdata["chroma_index"]
         flav = corrdata["quark_flavour"]
@@ -1196,7 +1228,7 @@ def plot_3point_nonzeromom_comp(
         kappa_combs = ["kp120900kp120900"]
         # source
         datafile_source = datadir / Path(
-            f"{kappa_combs[0]}_{source_mom}_{rel}_fitlist_2pt_2exp.pkl"
+            f"{kappa_combs[0]}_{neg_source_mom}_{rel}_fitlist_2pt_2exp.pkl"
         )
         with open(datafile_source, "rb") as file_in:
             fit_data_source = pickle.load(file_in)
@@ -1205,11 +1237,10 @@ def plot_3point_nonzeromom_comp(
             fit_data_source,
             tmin_choice,
             datadir,
-            mom,
         )
         # sink
         datafile_sink = datadir / Path(
-            f"{kappa_combs[0]}_{sink_mom}_{rel}_fitlist_2pt_2exp.pkl"
+            f"{kappa_combs[0]}_{neg_sink_mom}_{rel}_fitlist_2pt_2exp.pkl"
         )
         with open(datafile_sink, "rb") as file_in:
             fit_data_sink = pickle.load(file_in)
@@ -1218,7 +1249,6 @@ def plot_3point_nonzeromom_comp(
             fit_data_sink,
             tmin_choice,
             datadir,
-            mom,
         )
         energy_3pt = 0.5 * (fit_params_source[:, 1] + fit_params_sink[:, 1])
 
@@ -1235,7 +1265,6 @@ def plot_3point_nonzeromom_comp(
             fit_data_source,
             tmin_choice,
             datadir,
-            mom,
         )
         mass_3pt = fit_params_source[:, 1]
 
