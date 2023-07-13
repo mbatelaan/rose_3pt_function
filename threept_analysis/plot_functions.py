@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 import matplotlib.pyplot as plt
 from ratiofitting_emff import select_2pt_fit
+from ratiofitting_emff import weighted_average_fit
 from ratiofitting_emff import FormatMom
 from analysis import stats
 from analysis import fitfunc
@@ -854,7 +855,6 @@ def plot_ratio_fit_together_comp_two(
     )
     t16_const_fit = fitparam_t16["param"]
     print(f"{np.average(t16_const_fit)=}")
-    axarr[1].set_yticks([])
     axarr[1].errorbar(
         0,
         np.average(t10_const_fit),
@@ -900,24 +900,10 @@ def plot_ratio_fit_together_comp_two(
         color=_colors[5],
         fmt=_fmts[3],
     )
-    # axarr[1].errorbar(
-    #     4,
-    #     np.average(FH_data["deltaE_fit"]),
-    #     np.std(FH_data["deltaE_fit"]),
-    #     capsize=4,
-    #     elinewidth=1,
-    #     color=_colors[3],
-    #     fmt=_fmts[3],
-    # )
-    # axarr[1].errorbar(
-    #     4,
-    #     np.average(FH_data["FH_matrix_element"]),
-    #     np.std(FH_data["FH_matrix_element"]),
-    #     capsize=4,
-    #     elinewidth=1,
-    #     color=_colors[3],
-    #     fmt=_fmts[3],
-    # )
+
+    axarr[1].yaxis.tick_right()
+    axarr[1].set_yticklabels([])
+    # axarr[1].set_yticks([])
     axarr[1].set_xticks(
         [0, 1, 2, 3, 4],
     )
@@ -1232,25 +1218,14 @@ def plot_3point_nonzeromom_comp(
         )
         with open(datafile_source, "rb") as file_in:
             fit_data_source = pickle.load(file_in)
-        # Pick out the chosen 2pt fn fits
-        best_fit_source, fit_params_source = select_2pt_fit(
-            fit_data_source,
-            tmin_choice,
-            datadir,
-        )
-        # sink
+        energy_source = weighted_average_fit(fit_data_source)
         datafile_sink = datadir / Path(
             f"{kappa_combs[0]}_{neg_sink_mom}_{rel}_fitlist_2pt_2exp.pkl"
         )
         with open(datafile_sink, "rb") as file_in:
             fit_data_sink = pickle.load(file_in)
-        # Pick out the chosen 2pt fn fits
-        best_fit_sink, fit_params_sink = select_2pt_fit(
-            fit_data_sink,
-            tmin_choice,
-            datadir,
-        )
-        energy_3pt = 0.5 * (fit_params_source[:, 1] + fit_params_sink[:, 1])
+        energy_sink = weighted_average_fit(fit_data_sink)
+        energy_3pt = 0.5 * (energy_source + energy_sink)
 
         # ===============================================================
         # Read in the mass
@@ -1260,13 +1235,8 @@ def plot_3point_nonzeromom_comp(
         )
         with open(datafile_source, "rb") as file_in:
             fit_data_source = pickle.load(file_in)
-        # Pick out the chosen 2pt fn fits
-        best_fit_source, fit_params_source = select_2pt_fit(
-            fit_data_source,
-            tmin_choice,
-            datadir,
-        )
-        mass_3pt = fit_params_source[:, 1]
+        energy_source_0 = weighted_average_fit(fit_data_source)
+        mass_3pt = energy_source_0
 
         # ===============================================================
         # Read in the ratio data
@@ -1319,7 +1289,10 @@ def plot_3point_nonzeromom_comp(
             lattice_length = 32
             kinematic_term = 2 * energy_3pt / (mom_index1 * 2 * np.pi / lattice_length)
             FF_name = "M"
-        print(f"{np.average(kinematic_term)=}")
+
+        print("\n\n\n")
+        print(np.average(energy_3pt))
+        print(f"{np.average(kinematic_term)=}\n\n\n")
 
         ratio_list_choice = [
             np.einsum("ij,i->ij", ratio_list, kinematic_term)
@@ -1330,6 +1303,11 @@ def plot_3point_nonzeromom_comp(
         fit_param_ratio_boot = np.einsum(
             "ij,i->ij", fit_param_ratio_boot, kinematic_term
         )
+
+        # Already done.
+        # # Multiply the FH ratio by the kinematic terms
+        # FH_ratio = np.einsum("ij,j->ij", FH_ratio, kinematic_term[:300])
+
         # ======================================================================
         # Plot the results of two-exp fit to the ratio and the FH results
         # ======================================================================

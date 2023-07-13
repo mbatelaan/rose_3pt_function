@@ -48,6 +48,20 @@ def select_2pt_fit(fit_data_list, tmin_choice, datadir, weight_tol=0.01):
     return best_fit, fit_params
 
 
+def weighted_average_fit(fit_data_list, weight_tol=0.01):
+    """Sort through the fits to the two-point function and remove ones with low weights.
+    Then normalise the weights and take the weighted average
+    """
+    fitweights = np.array([fit["weight"] for fit in fit_data_list])
+    fitweights = np.where(fitweights > weight_tol, fitweights, 0)
+    fitweights = fitweights / sum(fitweights)
+    fit_energies = np.array([fit["param"][:, 1] for fit in fit_data_list])
+    # print(f"{np.shape(fitweights)=}")
+    # print(f"{np.shape(fit_energies)=}")
+    weighted_average_energy = np.einsum("ij,i->j", fit_energies, fitweights)
+    return weighted_average_energy
+
+
 def fit_ratio_plateau(ratio, src_snk_time, delta_t):
     """Fit to the three-point function with a two-exponential function, which includes parameters from the two-point functions"""
 

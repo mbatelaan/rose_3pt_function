@@ -1747,11 +1747,13 @@ def main():
         ratios_g4_quark2 = pickle.load(file_in)
     datafile_ratios_g2_quark1 = FH_datadir / Path(
         "gamma2/eff_3pt_formfactors_quark1.pkl"
+        # "gamma2/eff_3pt_ratios_quark1.pkl"
     )
     with open(datafile_ratios_g2_quark1, "rb") as file_in:
         ratios_g2_quark1 = pickle.load(file_in)
     datafile_ratios_g2_quark2 = FH_datadir / Path(
         "gamma2/eff_3pt_formfactors_quark2.pkl"
+        # "gamma2/eff_3pt_ratios_quark2.pkl"
     )
     with open(datafile_ratios_g2_quark2, "rb") as file_in:
         ratios_g2_quark2 = pickle.load(file_in)
@@ -1811,14 +1813,9 @@ def main():
             [[float(value) for value in row] for row in rows[1:]]
         ).T
 
-    # with open(datafile_fits_quark1, "rb") as file_in:
-    #     fitlist_g4_quark1 = pickle.load(file_in)
-    # with open(datafile_fits_quark2, "rb") as file_in:
-    #     fitlist_g4_quark2 = pickle.load(file_in)
-
     # ======================================================================
     # plot the results of the three-point fn ratio fits
-    # gamma 2 GE
+    # GE
     plots.plot_3point_nonzeromom_comp(
         latticedir,
         resultsdir,
@@ -1920,7 +1917,7 @@ def main():
 
     # ======================================================================
     # plot the results of the three-point fn ratio fits
-    # gamma 2 GM
+    # GM
     # Quark 1
     plots.plot_3point_nonzeromom_comp(
         latticedir,
